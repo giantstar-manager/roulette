@@ -1,0 +1,15 @@
+{
+  "name": "marble-roulette-soop-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WebSocket relay that connects to SOOP (AfreecaTV) live chat and forwards 별풍선 donation events to the Marble Roulette browser app.",
+  "type": "module",
+  "main": "relay.js",
+  "scripts": {
+    "start": "node relay.js"
+  },
+  "dependencies": {
+    "soop-extension": "^1.3.3",
+    "ws": "^8.18.0"
+  }
+}

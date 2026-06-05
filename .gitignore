@@ -11,3 +11,8 @@ src/preview.ts
 custom.html
 preview.html
 scripts/build-custom.sh
+.omc/
+.omo/
+.playwright-mcp/
+.yarn/
+.yarnrc.yml

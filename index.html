@@ -320,6 +320,104 @@
     };
 
     checkNotice();
+
+    initSoop();
+  }
+
+  // ----- SOOP integration -----
+  const SOOP_KEYS = {
+    relay: 'mbr_soop_relay',
+    streamer: 'mbr_soop_streamer',
+    perEntry: 'mbr_soop_perEntry',
+  };
+  let soopController = null;
+  let soopConnected = false;
+
+  function getSoopPerEntry() {
+    const v = parseInt(document.querySelector('#in_soopPerEntry').value, 10);
+    return Number.isNaN(v) || v <= 0 ? 100 : v;
+  }
+
+  function setSoopStatus(state, message) {
+    const wrap = document.querySelector('#soopStatus');
+    const text = document.querySelector('#soopStatusText');
+    wrap.setAttribute('data-state', state);
+    const labelMap = {
+      idle: 'Not connected',
+      connected: 'Connected',
+      disconnected: 'Disconnected',
+      error: 'Connection error',
+    };
+    text.textContent = labelMap[state] || 'Not connected';
+    text.setAttribute('data-trans', '');
+    if (window.translateElement) window.translateElement(text);
+    if (state === 'error' && message) {
+      console.warn('[soop] error:', message);
+    }
+    soopConnected = state === 'connected';
+    const btn = document.querySelector('#btnSoopConnect');
+    btn.textContent = soopConnected ? 'Disconnect' : 'Connect';
+    btn.setAttribute('data-trans', '');
+    if (window.translateElement) window.translateElement(btn);
+  }
+
+  function initSoop() {
+    const relayInput = document.querySelector('#in_soopRelay');
+    const streamerInput = document.querySelector('#in_soopStreamer');
+    const perEntryInput = document.querySelector('#in_soopPerEntry');
+
+    const savedRelay = localStorage.getItem(SOOP_KEYS.relay);
+    const savedStreamer = localStorage.getItem(SOOP_KEYS.streamer);
+    const savedPerEntry = localStorage.getItem(SOOP_KEYS.perEntry);
+    if (savedRelay) relayInput.value = savedRelay;
+    if (savedStreamer) streamerInput.value = savedStreamer;
+    if (savedPerEntry) perEntryInput.value = savedPerEntry;
+
+    const persist = () => {
+      localStorage.setItem(SOOP_KEYS.relay, relayInput.value.trim());
+      localStorage.setItem(SOOP_KEYS.streamer, streamerInput.value.trim());
+      localStorage.setItem(SOOP_KEYS.perEntry, String(getSoopPerEntry()));
+    };
+    relayInput.addEventListener('change', persist);
+    streamerInput.addEventListener('change', persist);
+    perEntryInput.addEventListener('change', persist);
+
+    soopController = new window.SoopController({
+      getNames: () => document.querySelector('#in_names').value,
+      setNames: (value) => {
+        document.querySelector('#in_names').value = value;
+        getReady();
+      },
+      getPerEntry: getSoopPerEntry,
+      onState: (state, message) => setSoopStatus(state, message),
+    });
+
+    const openSoop = () => {
+      document.querySelector('#soopSettings').style.display = 'flex';
+    };
+    const closeSoop = () => {
+      document.querySelector('#soopSettings').style.display = 'none';
+    };
+    document.querySelector('#btnSoopSettings').addEventListener('click', openSoop);
+    document.querySelector('#closeSoopSettings').addEventListener('click', closeSoop);
+
+    document.querySelector('#btnSoopConnect').addEventListener('click', () => {
+      if (soopConnected) {
+        soopController.disconnect();
+        setSoopStatus('idle');
+        return;
+      }
+      const relay = relayInput.value.trim();
+      const streamer = streamerInput.value.trim();
+      if (!relay || !streamer) {
+        setSoopStatus('error', 'Relay URL and streamer ID are required');
+        return;
+      }
+      persist();
+      soopController.connect(relay, streamer);
+    });
+
+    setSoopStatus('idle');
   }
 </script>
 <div id="settings" class="settings">
@@ -379,6 +477,9 @@
       <button id="btnNotice">
         <i class="icon megaphone"></i>
       </button>
+      <button id="btnSoopSettings" title="Detail settings">
+        <i class="icon gear"></i>
+      </button>
       <a href='https://marblerouletteshop.com' target='_blank' id="btnShop" class='btn new' title='MarbleRoulette Shop'>
         <img src='assets/images/marblerouletteshop.png' />
       </a>
@@ -408,6 +509,34 @@
   </div>
   <div class="notice-action">
     <button id="closeNotice" data-trans>Close</button>
+  </div>
+</div>
+<div id="soopSettings">
+  <h1 data-trans>Detail settings</h1>
+  <div class="soop-body">
+    <h2 data-trans>SOOP integration</h2>
+    <p class="soop-desc" data-trans>Donations add entries automatically. A donor giving N balloons adds floor(N / balloons-per-entry) entries.</p>
+    <p class="soop-desc" data-trans>A relay server is required. See server/README.md.</p>
+    <div class="soop-field">
+      <label for="in_soopRelay" data-trans>Relay URL</label>
+      <input type="text" id="in_soopRelay" placeholder="ws://localhost:8787" />
+    </div>
+    <div class="soop-field">
+      <label for="in_soopStreamer" data-trans>Streamer ID</label>
+      <input type="text" id="in_soopStreamer" placeholder="streamer_id" />
+    </div>
+    <div class="soop-field">
+      <label for="in_soopPerEntry" data-trans>Balloons per entry</label>
+      <input type="number" id="in_soopPerEntry" value="100" min="1" />
+    </div>
+    <div class="soop-status" id="soopStatus" data-state="idle">
+      <span class="status-dot"></span>
+      <span id="soopStatusText" data-trans>Not connected</span>
+    </div>
+    <div class="soop-action">
+      <button id="btnSoopConnect" class="btn-connect" data-trans>Connect</button>
+      <button id="closeSoopSettings" data-trans>Close</button>
+    </div>
   </div>
 </div>
 <div class="copyright">&copy; 2022-2026.<a href="https://lazygyu.net" target="_blank">lazygyu</a> <span data-trans>This program is freeware and may be used freely anywhere, including in broadcasts and videos.</span>

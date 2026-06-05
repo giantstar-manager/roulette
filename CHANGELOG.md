@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-06-05:
+    - Added SOOP (AfreecaTV) integration: 별풍선 (star balloon) donations can auto-add entries via a relay server. See `docs/SOOP_INTEGRATION.md`.
 - 2025-11-13:
     - Optimized the rendering process.
 - 2025-11-10:
