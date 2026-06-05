@@ -36,4 +36,32 @@ describe('applyBalloon', () => {
     expect(result).toBe('bob');
     expect(commit).toHaveBeenCalledWith('bob');
   });
+
+  it('S6 edge: a fully-sanitized (reserved-only) sender adds nothing and does NOT commit', () => {
+    const commit = vi.fn();
+    const result = applyBalloon('a*2', { sender: ',*/', count: 100 }, 100, commit);
+    expect(result).toBe('a*2');
+    expect(commit).not.toHaveBeenCalled();
+  });
+
+  it('S6 edge: an empty sender adds nothing and does NOT commit', () => {
+    const commit = vi.fn();
+    const result = applyBalloon('a*2', { sender: '', count: 100 }, 100, commit);
+    expect(result).toBe('a*2');
+    expect(commit).not.toHaveBeenCalled();
+  });
+
+  it('S6 edge: a whitespace-only sender adds nothing and does NOT commit', () => {
+    const commit = vi.fn();
+    const result = applyBalloon('a*2', { sender: '   ', count: 100 }, 100, commit);
+    expect(result).toBe('a*2');
+    expect(commit).not.toHaveBeenCalled();
+  });
+
+  it('S6 edge: an empty sender does NOT commit even when the list would only be renormalized', () => {
+    const commit = vi.fn();
+    const result = applyBalloon('alice*2,bob*1', { sender: ',*/', count: 100 }, 100, commit);
+    expect(result).toBe('alice*2,bob*1');
+    expect(commit).not.toHaveBeenCalled();
+  });
 });

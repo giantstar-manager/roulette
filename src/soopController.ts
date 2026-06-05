@@ -1,16 +1,17 @@
 import { SoopRelayClient } from './soopClient';
-import { accumulateName, balloonToEntries } from './soopMapper';
+import { accumulateName, balloonToEntries, sanitizeSender } from './soopMapper';
 import type { SoopBalloonMessage, SoopConnectionState } from './types/soop.type';
 
 /**
  * Pure seam between an incoming balloon donation and the names list.
  *
- * Computes the new list by mapping `count` -> floor(count / perEntry) entries under
- * the donor's nickname and accumulating into `currentValue`. Only invokes `commit`
- * (and thus refreshes the game) when the donation actually grants >= 1 entry, so
- * below-threshold or invalid donations are no-ops.
+ * Maps `count` -> floor(count / perEntry) entries under the donor's nickname and
+ * accumulates into `currentValue`. `commit` (which refreshes the game) is invoked
+ * only when a valid entry is actually addable, so below-threshold, invalid-perEntry,
+ * and empty/fully-sanitized-sender donations are no-ops that never reset a running
+ * game — even when accumulation would merely renormalize the existing list.
  *
- * Returns the resulting list string (unchanged when no entries were granted).
+ * Returns the resulting list string (unchanged when nothing was added).
  */
 export function applyBalloon(
   currentValue: string,
@@ -19,7 +20,7 @@ export function applyBalloon(
   commit: (newValue: string) => void
 ): string {
   const entries = balloonToEntries(balloon.count, perEntry);
-  if (entries <= 0) {
+  if (entries <= 0 || sanitizeSender(balloon.sender).length === 0) {
     return currentValue;
   }
   const newValue = accumulateName(currentValue, balloon.sender, entries);

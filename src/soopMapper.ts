@@ -50,7 +50,7 @@ function formatEntry(entry: ParsedName): string {
  * these, a nickname like `a,b` would split into two marbles and `a/9` would inject a
  * weight. Newlines are stripped because the list is also newline-delimited.
  */
-function sanitizeSender(sender: string): string {
+export function sanitizeSender(sender: string): string {
   return sender.replace(/[,*/\r\n]/g, '').trim();
 }
 
